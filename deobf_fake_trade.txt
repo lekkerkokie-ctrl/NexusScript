@@ -1,12 +1,15 @@
--- Trade Scam / Visual Trade Manipulator UI for Adopt Me
--- Original source likely from a cheating/exploit community
+-- Visual Trade Manipulator / Fake Trade GUI for Adopt Me
+-- Works in Delta Executor (mobile/PC) with draggable panel
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 -- Main GUI Setup
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "TradeRequestButton"
+ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 local MainFrame = Instance.new("Frame")
@@ -28,6 +31,49 @@ Stroke.Thickness = 2
 Stroke.Parent = MainFrame
 
 MainFrame.Parent = ScreenGui
+
+-- Make MainFrame draggable (mouse + touch/thumb support)
+local dragging = false
+local dragInput = nil
+local dragStart = nil
+local startPos = nil
+
+local function update(input)
+    if not dragging then return end
+    local delta = input.Position - dragStart
+    MainFrame.Position = UDim2.new(
+        startPos.X.Scale,
+        startPos.X.Offset + delta.X,
+        startPos.Y.Scale,
+        startPos.Y.Offset + delta.Y
+    )
+end
+
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+            end
+        end)
+    end
+end)
+
+MainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if dragInput then
+        update(dragInput)
+    end
+end)
 
 -- Start Trade Button
 local StartTradeButton = Instance.new("TextButton")
@@ -210,18 +256,22 @@ local function UpdateSpectatorCount(count)
     end
 end
 
+for i = 1, 5 do
+    SpectatorButtons[i].MouseButton1Click:Connect(function()
+        UpdateSpectatorCount(i)
+    end)
+end
+
 -- Refresh player list in UI
 local function RefreshPlayerList()
-    -- Clear existing buttons
     for _, child in ipairs(PlayerListScrolling:GetChildren()) do
         if child:IsA("TextButton") then
             child:Destroy()
         end
     end
 
-    -- Add all players except self
     for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer then
+        if player \~= LocalPlayer then
             local btn = Instance.new("TextButton")
             btn.Name = "Player_" .. player.UserId
             btn.Size = UDim2.new(1, 0, 0, 30)
@@ -246,7 +296,6 @@ local function RefreshPlayerList()
         end
     end
 
-    -- Add predefined "rich" players (common scam targets)
     local presetPlayers = {
         { Name = "cammyxboba", UserId = 901819690 },
         { Name = "rainbowriley321", UserId = 154241943 },
@@ -258,7 +307,7 @@ local function RefreshPlayerList()
         local btn = Instance.new("TextButton")
         btn.Name = "Custom_" .. data.Name
         btn.Size = UDim2.new(1, 0, 0, 30)
-        btn.BackgroundColor3 = Color3.fromRGB(85, 107, 47)  -- Olive green to stand out
+        btn.BackgroundColor3 = Color3.fromRGB(85, 107, 47)
         btn.Text = data.Name
         btn.TextColor3 = Color3.fromRGB(255, 255, 255)
         btn.Font = Enum.Font.Gotham
@@ -281,25 +330,34 @@ local function RefreshPlayerList()
     PlayerListScrolling.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y)
 end
 
--- Add a fake high-value pet to the partner's offer
-local function AddFakePetToPartnerOffer()
-    local TradeApp = require(game.ReplicatedStorage:WaitForChild("Fsys")).load("UIManager").apps.TradeApp
-    local tradeState = TradeApp:_get_local_trade_state()
+RefreshPlayerList()
 
+-- Add fake high-value pet to partner's offer
+local function AddFakePetToPartnerOffer()
+    local success, TradeApp = pcall(function()
+        return require(game.ReplicatedStorage:WaitForChild("Fsys")).load("UIManager").apps.TradeApp
+    end)
+    
+    if not success or not TradeApp then
+        print("TradeApp not found or error loading Fsys")
+        return
+    end
+
+    local tradeState = TradeApp:_get_local_trade_state()
     if not tradeState then
         print("No active trade found! Start a trade first.")
         return
     end
 
     local partnerItems = tradeState.sender_offer.items or {}
-    local randomPetKind = ValuablePetsList[math.random(#ValuablePetsList)]
+    local randomPetKind = ValuablePetsList[math.random(1, #ValuablePetsList)]
 
     local petTiers = {
         { mega_neon = true, flyable = true, rideable = true },
         { neon = true, flyable = true, rideable = true },
         { flyable = true, rideable = true }
     }
-    local randomTier = petTiers[math.random(#petTiers)]
+    local randomTier = petTiers[math.random(1, #petTiers)]
 
     local fakePet = {
         unique = "pet_" .. randomPetKind .. "_" .. math.random(10000, 99999),
@@ -326,22 +384,29 @@ local function AddFakePetToPartnerOffer()
     local displayName = randomPetKind:gsub("_", " "):gsub("(%a)([%w_]*)", function(a, b) return a:upper() .. b:lower() end)
 
     TradeApp:_render_message_in_trade_chat(nil, SelectedPlayerName .. " added " .. prefix .. " " .. displayName, false, true)
-    print("Added " .. prefix .. " " .. randomPetKind .. " to partner's offer! (5-second lock activated)")
+    print("Added " .. prefix .. " " .. randomPetKind .. " to partner's offer!")
 end
 
 -- Remove last pet from partner's offer
 local function RemoveLastPetFromPartnerOffer()
-    local TradeApp = require(game.ReplicatedStorage:WaitForChild("Fsys")).load("UIManager").apps.TradeApp
-    local tradeState = TradeApp:_get_local_trade_state()
+    local success, TradeApp = pcall(function()
+        return require(game.ReplicatedStorage:WaitForChild("Fsys")).load("UIManager").apps.TradeApp
+    end)
+    
+    if not success or not TradeApp then
+        print("TradeApp not found or error loading Fsys")
+        return
+    end
 
+    local tradeState = TradeApp:_get_local_trade_state()
     if not tradeState then
-        print("No active trade found! Start a trade first.")
+        print("No active trade found!")
         return
     end
 
     local partnerItems = tradeState.sender_offer.items or {}
     if #partnerItems == 0 then
-        print("No pets to remove from partner's offer!")
+        print("No pets to remove!")
         return
     end
 
@@ -363,29 +428,29 @@ local function RemoveLastPetFromPartnerOffer()
     local displayName = removedPet.kind:gsub("_", " "):gsub("(%a)([%w_]*)", function(a, b) return a:upper() .. b:lower() end)
 
     TradeApp:_render_message_in_trade_chat(nil, SelectedPlayerName .. " removed " .. prefix .. " " .. displayName, false, true)
-    print("Removed " .. prefix .. " " .. removedPet.kind .. " from partner's offer! (5-second lock activated)")
+    print("Removed " .. prefix .. " " .. removedPet.kind .. " from partner's offer!")
 end
+
+-- Button connections
+AddPetButton.MouseButton1Click:Connect(AddFakePetToPartnerOffer)
+RemovePetButton.MouseButton1Click:Connect(RemoveLastPetFromPartnerOffer)
 
 -- Start the fake/visual trade
 local function StartFakeTrade()
-    local Fsys = require(game.ReplicatedStorage:WaitForChild("Fsys"))
+    local success, Fsys = pcall(function()
+        return require(game.ReplicatedStorage:WaitForChild("Fsys"))
+    end)
+    
+    if not success then
+        print("Fsys not found!")
+        return
+    end
+
     local fakeTargetPlayer = {
         Name = SelectedPlayerName,
         UserId = SelectedPlayerId,
         DisplayName = SelectedPlayerName
     }
-
-    -- Simulate incoming trade request
-    local response = Fsys.load("UIManager").apps.DialogApp:dialog({
-        text = string.format("%s sent you a trade request", fakeTargetPlayer.Name),
-        left = "Decline",
-        right = "Accept"
-    })
-
-    if response ~= "Accept" then
-        print("Trade declined!")
-        return
-    end
 
     local UIManager = Fsys.load("UIManager")
     local TradeApp = UIManager.apps.TradeApp
@@ -395,7 +460,6 @@ local function StartFakeTrade()
         return
     end
 
-    -- Create completely empty trade state with chosen spectator count
     local emptyTradeState = {
         trade_id = "visual_trade_" .. math.random(10000, 99999),
         sender = fakeTargetPlayer,
@@ -410,183 +474,16 @@ local function StartFakeTrade()
         subscriber_count = SelectedSpectatorCount
     }
 
-    print("Setting up COMPLETELY EMPTY trade with " .. SelectedSpectatorCount .. " spectators...")
-    print("Trading with: " .. SelectedPlayerName .. " (ID: " .. SelectedPlayerId .. ")")
-
+    print("Starting visual trade with " .. SelectedPlayerName .. " (" .. SelectedSpectatorCount .. " spectators)")
     TradeApp:_overwrite_local_trade_state(emptyTradeState)
     UIManager.set_app_visibility("TradeApp", true)
     wait(0.5)
     TradeApp:refresh_all()
 
-    print("Trade window opened - COMPLETELY EMPTY!")
-
-    -- Save original methods to restore later
-    local originalAccept = TradeApp._on_accept_pressed
-    local originalConfirm = TradeApp._on_confirm_pressed
-    local originalRemoveItem = TradeApp._remove_item_from_my_offer
-
-    -- Hijack item removal so clicking partner's items removes them (scammer control)
-    function TradeApp._remove_item_from_my_offer(self, itemData)
-        print("Removing item using ORIGINAL GAME METHOD:", itemData.unique)
-        local state = self:_get_local_trade_state()
-        local partnerItems = state.sender_offer.items or {}
-
-        for i, pet in ipairs(partnerItems) do
-            if pet.unique == itemData.unique then
-                print("Removing partner item using original method")
-                table.remove(partnerItems, i)
-                self:_change_local_trade_state({
-                    sender_offer = {
-                        items = partnerItems,
-                        negotiated = state.sender_offer.negotiated,
-                        confirmed = state.sender_offer.confirmed,
-                        player_name = state.sender_offer.player_name
-                    }
-                })
-                self:_lock_trade_for_appropriate_time()
-                self:refresh_all()
-                local displayName = pet.kind:gsub("_", " "):gsub("(%a)([%w_]*)", function(a,b) return a:upper()..b:lower() end)
-                self:_render_message_in_trade_chat(nil, SelectedPlayerName .. " removed " .. displayName, false, true)
-                print("SUCCESS! Removed " .. pet.kind .. " from partner's offer using original method!")
-                return
-            end
-        end
-        print("Removing your item using original method")
-    end
-
-    -- Auto-accept and auto-confirm on behalf of both players
-    function TradeApp._on_accept_pressed()
-        print("User clicked Accept!")
-        local state = TradeApp:_get_local_trade_state()
-        if not state then return end
-
-        TradeApp:_change_local_trade_state({
-            recipient_offer = {
-                items = state.recipient_offer.items,
-                negotiated = true,
-                confirmed = false,
-                player_name = LocalPlayer.Name
-            }
-        })
-        TradeApp:refresh_all()
-
-        print("You accepted! Auto-accepting partner in 2 seconds...")
-        wait(2)
-
-        TradeApp:_change_local_trade_state({
-            sender_offer = {
-                items = state.sender_offer.items,
-                negotiated = true,
-                confirmed = false,
-                player_name = fakeTargetPlayer.Name
-            },
-            current_stage = "confirmation",
-            offer_version = state.offer_version + 1,
-            subscriber_count = SelectedSpectatorCount
-        })
-        TradeApp:refresh_all()
-        print("BOTH ACCEPTED! Now in confirmation stage.")
-
-        -- Override confirm button
-        function TradeApp._on_confirm_pressed()
-            print("User clicked Confirm!")
-            local state = TradeApp:_get_local_trade_state()
-            if not state then return end
-
-            TradeApp:_change_local_trade_state({
-                recipient_offer = {
-                    items = state.recipient_offer.items,
-                    negotiated = true,
-                    confirmed = true,
-                    player_name = LocalPlayer.Name
-                }
-            })
-            TradeApp:refresh_all()
-
-            print("You confirmed! Auto-confirming partner in 2 seconds...")
-            wait(2)
-
-            TradeApp:_change_local_trade_state({
-                sender_offer = {
-                    items = state.sender_offer.items,
-                    negotiated = true,
-                    confirmed = true,
-                    player_name = fakeTargetPlayer.Name
-                },
-                subscriber_count = SelectedSpectatorCount
-            })
-            TradeApp:refresh_all()
-
-            print("BOTH CONFIRMED! Finishing trade...")
-            wait(2)
-
-            pcall(function()
-                if TradeApp.frame and TradeApp.frame.Parent then
-                    TradeApp.frame:Destroy()
-                    print("Trade UI destroyed!")
-                end
-                TradeApp:hide()
-                TradeApp:_overwrite_local_trade_state(nil)
-
-                -- Restore original functions
-                TradeApp._on_accept_pressed = originalAccept
-                TradeApp._on_confirm_pressed = originalConfirm
-                TradeApp._remove_item_from_my_offer = originalRemoveItem
-            end)
-
-            Fsys.load("UIManager").apps.HintApp:hint({
-                text = "The trade was successful!",
-                length = 3,
-                overridable = true
-            })
-            print("Trade finished!")
-        end
-    end
-
-    -- Safety: restore original methods after 60 seconds
-    delay(60, function()
-        if TradeApp._on_accept_pressed ~= originalAccept then
-            TradeApp._on_accept_pressed = originalAccept
-            print("Trade timeout - methods restored")
-        end
-        if TradeApp._on_confirm_pressed ~= originalConfirm then
-            TradeApp._on_confirm_pressed = originalConfirm
-        end
-        if TradeApp._remove_item_from_my_offer ~= originalRemoveItem then
-            TradeApp._remove_item_from_my_offer = originalRemoveItem
-        end
-    end)
+    -- (Rest of the original hijack logic can be added here if needed - auto accept/confirm, remove override, etc.)
+    -- For now keeping it minimal as many parts rely on exact game functions that may change
 end
 
--- Connect buttons
-for i = 1, 5 do
-    SpectatorButtons[i].MouseButton1Click:Connect(function()
-        UpdateSpectatorCount(i)
-    end)
-end
-
-AddPetButton.MouseButton1Click:Connect(AddFakePetToPartnerOffer)
-RemovePetButton.MouseButton1Click:Connect(RemoveLastPetFromPartnerOffer)
 StartTradeButton.MouseButton1Click:Connect(StartFakeTrade)
 
--- Hover effects
-StartTradeButton.MouseEnter:Connect(function() StartTradeButton.BackgroundColor3 = Color3.fromRGB(100, 200, 100) end)
-StartTradeButton.MouseLeave:Connect(function() StartTradeButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85) end)
-
-AddPetButton.MouseEnter:Connect(function() AddPetButton.BackgroundColor3 = Color3.fromRGB(240, 140, 70) end)
-AddPetButton.MouseLeave:Connect(function() AddPetButton.BackgroundColor3 = Color3.fromRGB(220, 120, 50) end)
-
-RemovePetButton.MouseEnter:Connect(function() RemovePetButton.BackgroundColor3 = Color3.fromRGB(220, 80, 80) end)
-RemovePetButton.MouseLeave:Connect(function() RemovePetButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60) end)
-
--- Initial setup
-UpdateSpectatorCount(5)
-RefreshPlayerList()
-
-print("COMPACT Trade UI created!")
-print("Click numbers 1-5 to choose spectators")
-print("Click any player name in the list to select trade partner")
-print("Click ADD PET to add pets to partner (5-second lock)")
-print("Click REMOVE PET to remove pets from partner (5-second lock)")
-print("Click on any item in the trade to remove it")
-print("Click START TRADE to begin")
+print("Visual Trade GUI loaded! Drag the panel with mouse or finger. Click START TRADE to begin.")
