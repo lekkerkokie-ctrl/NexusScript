@@ -1,0 +1,592 @@
+-- Trade Scam / Visual Trade Manipulator UI for Adopt Me
+-- Original source likely from a cheating/exploit community
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Main GUI Setup
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "TradeRequestButton"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "TradeControlPanel"
+MainFrame.Size = UDim2.new(0, 180, 0, 320)
+MainFrame.Position = UDim2.new(0, 10, 0, 100)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+MainFrame.BackgroundTransparency = 0.1
+MainFrame.BorderSizePixel = 0
+MainFrame.ZIndex = 5
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 12)
+Corner.Parent = MainFrame
+
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(60, 60, 80)
+Stroke.Thickness = 2
+Stroke.Parent = MainFrame
+
+MainFrame.Parent = ScreenGui
+
+-- Start Trade Button
+local StartTradeButton = Instance.new("TextButton")
+StartTradeButton.Name = "StartVisualTradeRequest"
+StartTradeButton.Size = UDim2.new(0, 160, 0, 35)
+StartTradeButton.Position = UDim2.new(0, 10, 0, 10)
+StartTradeButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85)
+StartTradeButton.BorderSizePixel = 0
+StartTradeButton.Text = "START TRADE (5)"
+StartTradeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+StartTradeButton.Font = Enum.Font.GothamBold
+StartTradeButton.TextSize = 14
+StartTradeButton.ZIndex = 10
+
+Instance.new("UICorner", StartTradeButton).CornerRadius = UDim.new(0, 8)
+Instance.new("UIStroke", StartTradeButton).Color = Color3.fromRGB(60, 140, 60)
+Instance.new("UIStroke", StartTradeButton).Thickness = 2
+StartTradeButton.Parent = MainFrame
+
+-- Spectator Count Buttons (1-5)
+local SpectatorFrame = Instance.new("Frame")
+SpectatorFrame.Name = "SpectatorSelection"
+SpectatorFrame.Size = UDim2.new(0, 160, 0, 25)
+SpectatorFrame.Position = UDim2.new(0, 10, 0, 50)
+SpectatorFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SpectatorFrame.BackgroundTransparency = 0.1
+SpectatorFrame.BorderSizePixel = 0
+SpectatorFrame.ZIndex = 10
+
+Instance.new("UICorner", SpectatorFrame).CornerRadius = UDim.new(0, 6)
+SpectatorFrame.Parent = MainFrame
+
+local SpectatorButtons = {}
+for i = 1, 5 do
+    local button = Instance.new("TextButton")
+    button.Name = "Spectator" .. i
+    button.Size = UDim2.new(0, 28, 0, 20)
+    button.Position = UDim2.new(0, 5 + (i - 1) * 31, 0, 2)
+    button.BackgroundColor3 = i == 5 and Color3.fromRGB(85, 170, 85) or Color3.fromRGB(80, 80, 80)
+    button.Text = tostring(i)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.GothamBold
+    button.TextSize = 10
+    button.ZIndex = 11
+
+    Instance.new("UICorner", button).CornerRadius = UDim.new(0, 4)
+    button.Parent = SpectatorFrame
+    SpectatorButtons[i] = button
+end
+
+-- Add Pet Button
+local AddPetButton = Instance.new("TextButton")
+AddPetButton.Name = "AddRandomPetButton"
+AddPetButton.Size = UDim2.new(0, 160, 0, 25)
+AddPetButton.Position = UDim2.new(0, 10, 0, 80)
+AddPetButton.BackgroundColor3 = Color3.fromRGB(220, 120, 50)
+AddPetButton.Text = "ADD PET"
+AddPetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AddPetButton.Font = Enum.Font.GothamBold
+AddPetButton.TextSize = 11
+AddPetButton.ZIndex = 10
+
+Instance.new("UICorner", AddPetButton).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", AddPetButton).Color = Color3.fromRGB(180, 80, 30)
+AddPetButton.Parent = MainFrame
+
+-- Remove Pet Button
+local RemovePetButton = Instance.new("TextButton")
+RemovePetButton.Name = "RemovePetButton"
+RemovePetButton.Size = UDim2.new(0, 160, 0, 25)
+RemovePetButton.Position = UDim2.new(0, 10, 0, 110)
+RemovePetButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60)
+RemovePetButton.Text = "REMOVE PET"
+RemovePetButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+RemovePetButton.Font = Enum.Font.GothamBold
+RemovePetButton.TextSize = 11
+RemovePetButton.ZIndex = 10
+
+Instance.new("UICorner", RemovePetButton).CornerRadius = UDim.new(0, 6)
+Instance.new("UIStroke", RemovePetButton).Color = Color3.fromRGB(150, 40, 40)
+RemovePetButton.Parent = MainFrame
+
+-- Player Selection Section
+local PlayerSelectionFrame = Instance.new("Frame")
+PlayerSelectionFrame.Name = "PlayerSelectionSection"
+PlayerSelectionFrame.Size = UDim2.new(0, 160, 0, 150)
+PlayerSelectionFrame.Position = UDim2.new(0, 10, 0, 140)
+PlayerSelectionFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+PlayerSelectionFrame.BorderSizePixel = 0
+PlayerSelectionFrame.ZIndex = 10
+
+Instance.new("UICorner", PlayerSelectionFrame).CornerRadius = UDim.new(0, 8)
+Instance.new("UIStroke", PlayerSelectionFrame).Color = Color3.fromRGB(70, 70, 90)
+PlayerSelectionFrame.Parent = MainFrame
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "PlayerSelectTitle"
+TitleLabel.Size = UDim2.new(1, 0, 0, 20)
+TitleLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+TitleLabel.Text = "SELECT PLAYER"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.Font = Enum.Font.GothamBold
+TitleLabel.TextSize = 11
+TitleLabel.ZIndex = 11
+Instance.new("UICorner", TitleLabel).CornerRadius = UDim.new(0, 8)
+TitleLabel.Parent = PlayerSelectionFrame
+
+local PlayerListScrolling = Instance.new("ScrollingFrame")
+PlayerListScrolling.Name = "PlayerList"
+PlayerListScrolling.Size = UDim2.new(1, -10, 1, -25)
+PlayerListScrolling.Position = UDim2.new(0, 5, 0, 20)
+PlayerListScrolling.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+PlayerListScrolling.ScrollBarThickness = 4
+PlayerListScrolling.ZIndex = 11
+PlayerListScrolling.Parent = PlayerSelectionFrame
+
+local ListLayout = Instance.new("UIListLayout")
+ListLayout.Padding = UDim.new(0, 2)
+ListLayout.Parent = PlayerListScrolling
+
+-- Selected Player Display
+local SelectedPlayerNameLabel = Instance.new("TextLabel")
+SelectedPlayerNameLabel.Name = "SelectedPlayerLabel"
+SelectedPlayerNameLabel.Size = UDim2.new(0, 160, 0, 15)
+SelectedPlayerNameLabel.Position = UDim2.new(0, 10, 0, 295)
+SelectedPlayerNameLabel.BackgroundTransparency = 1
+SelectedPlayerNameLabel.Text = "AdoptMe_Fan"
+SelectedPlayerNameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SelectedPlayerNameLabel.Font = Enum.Font.Gotham
+SelectedPlayerNameLabel.TextSize = 10
+SelectedPlayerNameLabel.ZIndex = 10
+SelectedPlayerNameLabel.Parent = MainFrame
+
+local SelectedPlayerIdLabel = Instance.new("TextLabel")
+SelectedPlayerIdLabel.Name = "SelectedPlayerIdLabel"
+SelectedPlayerIdLabel.Size = UDim2.new(0, 160, 0, 12)
+SelectedPlayerIdLabel.Position = UDim2.new(0, 10, 0, 310)
+SelectedPlayerIdLabel.BackgroundTransparency = 1
+SelectedPlayerIdLabel.Text = "ID: 123456"
+SelectedPlayerIdLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+SelectedPlayerIdLabel.Font = Enum.Font.Gotham
+SelectedPlayerIdLabel.TextSize = 9
+SelectedPlayerIdLabel.ZIndex = 10
+SelectedPlayerIdLabel.Parent = MainFrame
+
+-- Script State
+local SelectedSpectatorCount = 5
+local SelectedPlayerName = "AdoptMe_Fan"
+local SelectedPlayerId = 123456
+
+local ValuablePetsList = {
+    "ugc_refresh_2023_african_wild_dog",
+    "albino_monkey",
+    "arctic_reindeer",
+    "summerfest_2024_balloon_unicorn",
+    "bat_dragon",
+    "lures_2023_blazing_lion",
+    "easter_2024_candyfloss_chick",
+    "crow",
+    "frost_dragon",
+    "giraffe",
+    "pride_2022_goat",
+    "springfest_2023_hare",
+    "elf_hedgehog",
+    "owl",
+    "parrot",
+    "winter_2023_peppermint_penguin",
+    "shadow_dragon",
+    "summerfest_2023",
+    "meme_2023_sheeeeep",
+    "winter_2022_strawberry_shortcake_bat_dragon"
+}
+
+-- Update spectator count selection
+local function UpdateSpectatorCount(count)
+    SelectedSpectatorCount = count
+    StartTradeButton.Text = "START TRADE (" .. count .. ")"
+    for i = 1, 5 do
+        SpectatorButtons[i].BackgroundColor3 = i == count and Color3.fromRGB(85, 170, 85) or Color3.fromRGB(80, 80, 80)
+    end
+end
+
+-- Refresh player list in UI
+local function RefreshPlayerList()
+    -- Clear existing buttons
+    for _, child in ipairs(PlayerListScrolling:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+
+    -- Add all players except self
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer then
+            local btn = Instance.new("TextButton")
+            btn.Name = "Player_" .. player.UserId
+            btn.Size = UDim2.new(1, 0, 0, 30)
+            btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+            btn.Text = player.Name
+            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+            btn.Font = Enum.Font.Gotham
+            btn.TextSize = 10
+            btn.TextWrapped = true
+            btn.ZIndex = 12
+            Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+            btn.MouseButton1Click:Connect(function()
+                SelectedPlayerName = player.Name
+                SelectedPlayerId = player.UserId
+                SelectedPlayerNameLabel.Text = SelectedPlayerName
+                SelectedPlayerIdLabel.Text = "ID: " .. SelectedPlayerId
+                print("Selected player: " .. SelectedPlayerName .. " (ID: " .. SelectedPlayerId .. ")")
+            end)
+
+            btn.Parent = PlayerListScrolling
+        end
+    end
+
+    -- Add predefined "rich" players (common scam targets)
+    local presetPlayers = {
+        { Name = "cammyxboba", UserId = 901819690 },
+        { Name = "rainbowriley321", UserId = 154241943 },
+        { Name = "roplexyoutube", UserId = 1676706728 },
+        { Name = "j3llynoah", UserId = 9190499461 }
+    }
+
+    for _, data in ipairs(presetPlayers) do
+        local btn = Instance.new("TextButton")
+        btn.Name = "Custom_" .. data.Name
+        btn.Size = UDim2.new(1, 0, 0, 30)
+        btn.BackgroundColor3 = Color3.fromRGB(85, 107, 47)  -- Olive green to stand out
+        btn.Text = data.Name
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 10
+        btn.TextWrapped = true
+        btn.ZIndex = 12
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+
+        btn.MouseButton1Click:Connect(function()
+            SelectedPlayerName = data.Name
+            SelectedPlayerId = data.UserId
+            SelectedPlayerNameLabel.Text = SelectedPlayerName
+            SelectedPlayerIdLabel.Text = "ID: " .. SelectedPlayerId
+            print("Selected custom player: " .. SelectedPlayerName .. " (ID: " .. SelectedPlayerId .. ")")
+        end)
+
+        btn.Parent = PlayerListScrolling
+    end
+
+    PlayerListScrolling.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y)
+end
+
+-- Add a fake high-value pet to the partner's offer
+local function AddFakePetToPartnerOffer()
+    local TradeApp = require(game.ReplicatedStorage:WaitForChild("Fsys")).load("UIManager").apps.TradeApp
+    local tradeState = TradeApp:_get_local_trade_state()
+
+    if not tradeState then
+        print("No active trade found! Start a trade first.")
+        return
+    end
+
+    local partnerItems = tradeState.sender_offer.items or {}
+    local randomPetKind = ValuablePetsList[math.random(#ValuablePetsList)]
+
+    local petTiers = {
+        { mega_neon = true, flyable = true, rideable = true },
+        { neon = true, flyable = true, rideable = true },
+        { flyable = true, rideable = true }
+    }
+    local randomTier = petTiers[math.random(#petTiers)]
+
+    local fakePet = {
+        unique = "pet_" .. randomPetKind .. "_" .. math.random(10000, 99999),
+        category = "pets",
+        kind = randomPetKind,
+        properties = randomTier
+    }
+
+    table.insert(partnerItems, fakePet)
+
+    TradeApp:_change_local_trade_state({
+        sender_offer = {
+            items = partnerItems,
+            negotiated = tradeState.sender_offer.negotiated,
+            confirmed = tradeState.sender_offer.confirmed,
+            player_name = tradeState.sender_offer.player_name
+        }
+    })
+
+    TradeApp:refresh_all()
+    TradeApp:_lock_trade_for_appropriate_time()
+
+    local prefix = randomTier.mega_neon and "MFR" or (randomTier.neon and "NFR" or "FR")
+    local displayName = randomPetKind:gsub("_", " "):gsub("(%a)([%w_]*)", function(a, b) return a:upper() .. b:lower() end)
+
+    TradeApp:_render_message_in_trade_chat(nil, SelectedPlayerName .. " added " .. prefix .. " " .. displayName, false, true)
+    print("Added " .. prefix .. " " .. randomPetKind .. " to partner's offer! (5-second lock activated)")
+end
+
+-- Remove last pet from partner's offer
+local function RemoveLastPetFromPartnerOffer()
+    local TradeApp = require(game.ReplicatedStorage:WaitForChild("Fsys")).load("UIManager").apps.TradeApp
+    local tradeState = TradeApp:_get_local_trade_state()
+
+    if not tradeState then
+        print("No active trade found! Start a trade first.")
+        return
+    end
+
+    local partnerItems = tradeState.sender_offer.items or {}
+    if #partnerItems == 0 then
+        print("No pets to remove from partner's offer!")
+        return
+    end
+
+    local removedPet = table.remove(partnerItems)
+
+    TradeApp:_change_local_trade_state({
+        sender_offer = {
+            items = partnerItems,
+            negotiated = tradeState.sender_offer.negotiated,
+            confirmed = tradeState.sender_offer.confirmed,
+            player_name = tradeState.sender_offer.player_name
+        }
+    })
+
+    TradeApp:refresh_all()
+    TradeApp:_lock_trade_for_appropriate_time()
+
+    local prefix = removedPet.properties.mega_neon and "MFR" or (removedPet.properties.neon and "NFR" or "FR")
+    local displayName = removedPet.kind:gsub("_", " "):gsub("(%a)([%w_]*)", function(a, b) return a:upper() .. b:lower() end)
+
+    TradeApp:_render_message_in_trade_chat(nil, SelectedPlayerName .. " removed " .. prefix .. " " .. displayName, false, true)
+    print("Removed " .. prefix .. " " .. removedPet.kind .. " from partner's offer! (5-second lock activated)")
+end
+
+-- Start the fake/visual trade
+local function StartFakeTrade()
+    local Fsys = require(game.ReplicatedStorage:WaitForChild("Fsys"))
+    local fakeTargetPlayer = {
+        Name = SelectedPlayerName,
+        UserId = SelectedPlayerId,
+        DisplayName = SelectedPlayerName
+    }
+
+    -- Simulate incoming trade request
+    local response = Fsys.load("UIManager").apps.DialogApp:dialog({
+        text = string.format("%s sent you a trade request", fakeTargetPlayer.Name),
+        left = "Decline",
+        right = "Accept"
+    })
+
+    if response ~= "Accept" then
+        print("Trade declined!")
+        return
+    end
+
+    local UIManager = Fsys.load("UIManager")
+    local TradeApp = UIManager.apps.TradeApp
+
+    if not TradeApp then
+        print("TradeApp not found")
+        return
+    end
+
+    -- Create completely empty trade state with chosen spectator count
+    local emptyTradeState = {
+        trade_id = "visual_trade_" .. math.random(10000, 99999),
+        sender = fakeTargetPlayer,
+        recipient = LocalPlayer,
+        sender_offer = { items = {}, negotiated = false, confirmed = false, player_name = fakeTargetPlayer.Name },
+        recipient_offer = { items = {}, negotiated = false, confirmed = false, player_name = LocalPlayer.Name },
+        current_stage = "negotiation",
+        offer_version = 1,
+        sender_has_trade_license = true,
+        recipient_has_trade_license = true,
+        busy_indicators = {},
+        subscriber_count = SelectedSpectatorCount
+    }
+
+    print("Setting up COMPLETELY EMPTY trade with " .. SelectedSpectatorCount .. " spectators...")
+    print("Trading with: " .. SelectedPlayerName .. " (ID: " .. SelectedPlayerId .. ")")
+
+    TradeApp:_overwrite_local_trade_state(emptyTradeState)
+    UIManager.set_app_visibility("TradeApp", true)
+    wait(0.5)
+    TradeApp:refresh_all()
+
+    print("Trade window opened - COMPLETELY EMPTY!")
+
+    -- Save original methods to restore later
+    local originalAccept = TradeApp._on_accept_pressed
+    local originalConfirm = TradeApp._on_confirm_pressed
+    local originalRemoveItem = TradeApp._remove_item_from_my_offer
+
+    -- Hijack item removal so clicking partner's items removes them (scammer control)
+    function TradeApp._remove_item_from_my_offer(self, itemData)
+        print("Removing item using ORIGINAL GAME METHOD:", itemData.unique)
+        local state = self:_get_local_trade_state()
+        local partnerItems = state.sender_offer.items or {}
+
+        for i, pet in ipairs(partnerItems) do
+            if pet.unique == itemData.unique then
+                print("Removing partner item using original method")
+                table.remove(partnerItems, i)
+                self:_change_local_trade_state({
+                    sender_offer = {
+                        items = partnerItems,
+                        negotiated = state.sender_offer.negotiated,
+                        confirmed = state.sender_offer.confirmed,
+                        player_name = state.sender_offer.player_name
+                    }
+                })
+                self:_lock_trade_for_appropriate_time()
+                self:refresh_all()
+                local displayName = pet.kind:gsub("_", " "):gsub("(%a)([%w_]*)", function(a,b) return a:upper()..b:lower() end)
+                self:_render_message_in_trade_chat(nil, SelectedPlayerName .. " removed " .. displayName, false, true)
+                print("SUCCESS! Removed " .. pet.kind .. " from partner's offer using original method!")
+                return
+            end
+        end
+        print("Removing your item using original method")
+    end
+
+    -- Auto-accept and auto-confirm on behalf of both players
+    function TradeApp._on_accept_pressed()
+        print("User clicked Accept!")
+        local state = TradeApp:_get_local_trade_state()
+        if not state then return end
+
+        TradeApp:_change_local_trade_state({
+            recipient_offer = {
+                items = state.recipient_offer.items,
+                negotiated = true,
+                confirmed = false,
+                player_name = LocalPlayer.Name
+            }
+        })
+        TradeApp:refresh_all()
+
+        print("You accepted! Auto-accepting partner in 2 seconds...")
+        wait(2)
+
+        TradeApp:_change_local_trade_state({
+            sender_offer = {
+                items = state.sender_offer.items,
+                negotiated = true,
+                confirmed = false,
+                player_name = fakeTargetPlayer.Name
+            },
+            current_stage = "confirmation",
+            offer_version = state.offer_version + 1,
+            subscriber_count = SelectedSpectatorCount
+        })
+        TradeApp:refresh_all()
+        print("BOTH ACCEPTED! Now in confirmation stage.")
+
+        -- Override confirm button
+        function TradeApp._on_confirm_pressed()
+            print("User clicked Confirm!")
+            local state = TradeApp:_get_local_trade_state()
+            if not state then return end
+
+            TradeApp:_change_local_trade_state({
+                recipient_offer = {
+                    items = state.recipient_offer.items,
+                    negotiated = true,
+                    confirmed = true,
+                    player_name = LocalPlayer.Name
+                }
+            })
+            TradeApp:refresh_all()
+
+            print("You confirmed! Auto-confirming partner in 2 seconds...")
+            wait(2)
+
+            TradeApp:_change_local_trade_state({
+                sender_offer = {
+                    items = state.sender_offer.items,
+                    negotiated = true,
+                    confirmed = true,
+                    player_name = fakeTargetPlayer.Name
+                },
+                subscriber_count = SelectedSpectatorCount
+            })
+            TradeApp:refresh_all()
+
+            print("BOTH CONFIRMED! Finishing trade...")
+            wait(2)
+
+            pcall(function()
+                if TradeApp.frame and TradeApp.frame.Parent then
+                    TradeApp.frame:Destroy()
+                    print("Trade UI destroyed!")
+                end
+                TradeApp:hide()
+                TradeApp:_overwrite_local_trade_state(nil)
+
+                -- Restore original functions
+                TradeApp._on_accept_pressed = originalAccept
+                TradeApp._on_confirm_pressed = originalConfirm
+                TradeApp._remove_item_from_my_offer = originalRemoveItem
+            end)
+
+            Fsys.load("UIManager").apps.HintApp:hint({
+                text = "The trade was successful!",
+                length = 3,
+                overridable = true
+            })
+            print("Trade finished!")
+        end
+    end
+
+    -- Safety: restore original methods after 60 seconds
+    delay(60, function()
+        if TradeApp._on_accept_pressed ~= originalAccept then
+            TradeApp._on_accept_pressed = originalAccept
+            print("Trade timeout - methods restored")
+        end
+        if TradeApp._on_confirm_pressed ~= originalConfirm then
+            TradeApp._on_confirm_pressed = originalConfirm
+        end
+        if TradeApp._remove_item_from_my_offer ~= originalRemoveItem then
+            TradeApp._remove_item_from_my_offer = originalRemoveItem
+        end
+    end)
+end
+
+-- Connect buttons
+for i = 1, 5 do
+    SpectatorButtons[i].MouseButton1Click:Connect(function()
+        UpdateSpectatorCount(i)
+    end)
+end
+
+AddPetButton.MouseButton1Click:Connect(AddFakePetToPartnerOffer)
+RemovePetButton.MouseButton1Click:Connect(RemoveLastPetFromPartnerOffer)
+StartTradeButton.MouseButton1Click:Connect(StartFakeTrade)
+
+-- Hover effects
+StartTradeButton.MouseEnter:Connect(function() StartTradeButton.BackgroundColor3 = Color3.fromRGB(100, 200, 100) end)
+StartTradeButton.MouseLeave:Connect(function() StartTradeButton.BackgroundColor3 = Color3.fromRGB(85, 170, 85) end)
+
+AddPetButton.MouseEnter:Connect(function() AddPetButton.BackgroundColor3 = Color3.fromRGB(240, 140, 70) end)
+AddPetButton.MouseLeave:Connect(function() AddPetButton.BackgroundColor3 = Color3.fromRGB(220, 120, 50) end)
+
+RemovePetButton.MouseEnter:Connect(function() RemovePetButton.BackgroundColor3 = Color3.fromRGB(220, 80, 80) end)
+RemovePetButton.MouseLeave:Connect(function() RemovePetButton.BackgroundColor3 = Color3.fromRGB(200, 60, 60) end)
+
+-- Initial setup
+UpdateSpectatorCount(5)
+RefreshPlayerList()
+
+print("COMPACT Trade UI created!")
+print("Click numbers 1-5 to choose spectators")
+print("Click any player name in the list to select trade partner")
+print("Click ADD PET to add pets to partner (5-second lock)")
+print("Click REMOVE PET to remove pets from partner (5-second lock)")
+print("Click on any item in the trade to remove it")
+print("Click START TRADE to begin")
